@@ -1,5 +1,4 @@
 # E-Commerce-Order-Tracking-and-Customer-Analytics-System
-Group 20 - E-commerce Order Tracking and Customer Analytics System
 
 a)	Brief Description of the Problem:
 
