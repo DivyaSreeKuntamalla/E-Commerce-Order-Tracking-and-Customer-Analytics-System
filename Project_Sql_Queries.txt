@@ -1,0 +1,400 @@
+-- SQL Queries:
+
+-- Order Tracking Queries
+
+-- Retrieve All Orders with Full Customer and Product Details
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    p.Name AS Product_Name,
+    o.Total_Amount,
+    o.Order_Date,
+    o.Status
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID;
+
+-- Retrieve Orders Placed in the Last 30 Days
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    o.Order_Date,
+    o.Total_Amount,
+    o.Status
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+WHERE o.Order_Date >= CURDATE() - INTERVAL 30 DAY;
+
+-- Find Orders That Are Pending or Cancelled
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    o.Status,
+    o.Total_Amount,
+    o.Order_Date
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+WHERE o.Status IN ('Pending', 'Cancelled');
+
+-- Inventory Monitoring Queries
+
+-- List Products with Low Stock (Threshold: 10)
+
+SELECT 
+    p.Product_ID,
+    p.Name AS Product_Name,
+    p.Stock_Quantity,
+    p.Count_in_Inventory
+FROM Products p
+WHERE p.Stock_Quantity < 30
+ORDER BY p.Stock_Quantity ASC;
+
+-- Find the Total Number of Products Supplied by Each Supplier
+
+SELECT 
+    s.Supplier_ID,
+    s.Name AS Supplier_Name,
+    COUNT(p.Product_ID) AS Total_Products
+FROM Suppliers s
+JOIN Products p ON s.Supplier_ID = p.Supplier_ID
+GROUP BY s.Supplier_ID, s.Name;
+
+-- Identify the Most Popular Product Based on Orders
+
+SELECT 
+    p.Product_ID,
+    p.Name AS Product_Name,
+    COUNT(o.Order_ID) AS Total_Orders
+FROM Products p
+JOIN Orders o ON p.Product_ID = o.Product_ID
+GROUP BY p.Product_ID, p.Name
+ORDER BY Total_Orders DESC
+LIMIT 1;
+
+-- Customer Information Management Queries
+
+-- List Customers and Their Total Number of Orders
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    COUNT(o.Order_ID) AS Total_Orders
+FROM Customers c
+LEFT JOIN Orders o ON c.Customer_ID = o.Customer_ID
+GROUP BY c.Customer_ID, c.Name
+ORDER BY Total_Orders DESC;
+
+-- Retrieve Customers Who Have Not Placed Any Orders
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    COUNT(o.Order_ID) AS Total_Orders
+FROM Customers c
+LEFT JOIN Orders o ON c.Customer_ID = o.Customer_ID
+GROUP BY c.Customer_ID, c.Name
+ORDER BY Total_Orders DESC;
+
+-- Get Customers and Their Most Recent Order Date
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    MAX(o.Order_Date) AS Last_Order_Date
+FROM Customers c
+JOIN Orders o ON c.Customer_ID = o.Customer_ID
+GROUP BY c.Customer_ID, c.Name;
+
+-- Payment and Shipment Tracking Queries
+
+-- List All Payments with Corresponding Order and Customer Details
+
+SELECT 
+    pay.Payment_ID,
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    pay.Payment_Method,
+    pay.Amount_Paid,
+    pay.Payment_Date
+FROM Payments pay
+JOIN Orders o ON pay.Order_ID = o.Order_ID
+JOIN Customers c ON o.Customer_ID = c.Customer_ID;
+
+-- Find Shipments That Were Delivered Late
+
+SELECT 
+    s.Shipment_ID,
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    s.Carrier,
+    s.Status,
+    s.Shipment_Date
+FROM Shipments s
+JOIN Orders o ON s.Order_ID = o.Order_ID
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+WHERE s.Status LIKE '%Late%';
+
+-- Identify Orders with Payments and Shipments Completed
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    pay.Payment_Method,
+    s.Carrier,
+    s.Status AS Shipment_Status
+FROM Orders o
+JOIN Payments pay ON o.Order_ID = pay.Order_ID
+JOIN Shipments s ON o.Order_ID = s.Order_ID
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+WHERE o.Status = 'Delivered';
+
+-- Discount and Review Analysis Queries
+
+-- Orders That Applied a Discount
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    d.Discount_Code,
+    d.Discount_Amount,
+    o.Total_Amount
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Discounts d ON o.Discount_ID = d.Discount_ID;
+
+-- Products with the Highest Average Rating
+
+SELECT 
+    p.Product_ID,
+    p.Name AS Product_Name,
+    AVG(r.Rating) AS Average_Rating,
+    COUNT(r.Review_ID) AS Total_Reviews
+FROM Products p
+JOIN Reviews r ON p.Product_ID = r.Product_ID
+GROUP BY p.Product_ID, p.Name
+ORDER BY Average_Rating DESC
+LIMIT 5;
+
+-- Customers Who Have Given the Most Reviews
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    COUNT(r.Review_ID) AS Total_Reviews
+FROM Customers c
+JOIN Reviews r ON c.Customer_ID = r.Customer_ID
+GROUP BY c.Customer_ID, c.Name
+ORDER BY Total_Reviews DESC;
+
+-- Complex Analytical Queries
+
+-- Total Sales per Month
+
+SELECT 
+    DATE_FORMAT(o.Order_Date, '%Y-%m') AS Month,
+    SUM(o.Total_Amount) AS Total_Sales,
+    COUNT(o.Order_ID) AS Total_Orders
+FROM Orders o
+GROUP BY Month
+ORDER BY Month;
+
+-- Top 3 Customers by Total Spend
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    SUM(o.Total_Amount) AS Total_Spend
+FROM Customers c
+JOIN Orders o ON c.Customer_ID = o.Customer_ID
+GROUP BY c.Customer_ID, c.Name
+ORDER BY Total_Spend DESC
+LIMIT 3;
+
+-- Products Supplied by Each Supplier with Total Stock
+
+SELECT 
+    s.Supplier_ID,
+    s.Name AS Supplier_Name,
+    p.Name AS Product_Name,
+    p.Stock_Quantity
+FROM Suppliers s
+JOIN Products p ON s.Supplier_ID = p.Supplier_ID
+ORDER BY s.Supplier_ID;
+
+-- Orders with High Discounts (Discount Amount > 30)
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    d.Discount_Code,
+    d.Discount_Amount,
+    o.Total_Amount
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+WHERE d.Discount_Amount > 30;
+
+-- Orders with Full Details: Customer, Product, Discount, Payment, and Shipment
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    c.Email AS Customer_Email,
+    p.Name AS Product_Name,
+    p.Price AS Product_Price,
+    d.Discount_Code,
+    IFNULL(d.Discount_Amount, 0) AS Discount_Amount,
+    o.Total_Amount,
+    pay.Payment_Method,
+    pay.Amount_Paid,
+    pay.Payment_Date,
+    s.Carrier,
+    s.Status AS Shipment_Status,
+    s.Tracking_Number,
+    s.Shipment_Date,
+    o.Order_Date,
+    o.Status AS Order_Status
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID
+LEFT JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+LEFT JOIN Payments pay ON o.Order_ID = pay.Order_ID
+LEFT JOIN Shipments s ON o.Order_ID = s.Order_ID
+ORDER BY o.Order_Date DESC;
+
+-- Orders with the Highest Discounts and Corresponding Payment Methods
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    p.Name AS Product_Name,
+    d.Discount_Code,
+    d.Discount_Amount,
+    o.Total_Amount,
+    pay.Payment_Method,
+    pay.Amount_Paid
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID
+JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+JOIN Payments pay ON o.Order_ID = pay.Order_ID
+ORDER BY d.Discount_Amount DESC
+LIMIT 10;
+
+-- Monthly Sales Analysis with Discount Impact
+
+SELECT 
+    DATE_FORMAT(o.Order_Date, '%Y-%m') AS Month,
+    COUNT(o.Order_ID) AS Total_Orders,
+    SUM(o.Total_Amount) AS Total_Sales,
+    SUM(IFNULL(d.Discount_Amount, 0)) AS Total_Discount
+FROM Orders o
+LEFT JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+GROUP BY Month
+ORDER BY Month DESC;
+
+-- Customers with the Most Expensive Orders
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    o.Order_ID,
+    o.Total_Amount,
+    o.Order_Date
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+ORDER BY o.Total_Amount DESC
+LIMIT 10;
+
+-- Orders with Delayed Shipments
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    p.Name AS Product_Name,
+    s.Carrier,
+    s.Status AS Shipment_Status,
+    s.Shipment_Date,
+    o.Order_Date
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID
+JOIN Shipments s ON o.Order_ID = s.Order_ID
+WHERE s.Status LIKE '%Late%' OR s.Status LIKE '%Delayed%'
+ORDER BY s.Shipment_Date DESC;
+
+-- Customers Who Frequently Apply Discounts
+
+SELECT 
+    c.Customer_ID,
+    c.Name AS Customer_Name,
+    COUNT(o.Order_ID) AS Discounted_Orders,
+    SUM(d.Discount_Amount) AS Total_Discount_Applied
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+GROUP BY c.Customer_ID, c.Name
+ORDER BY Discounted_Orders DESC;
+
+-- Average Order Value by Payment Method
+
+SELECT 
+    pay.Payment_Method,
+    COUNT(o.Order_ID) AS Total_Orders,
+    AVG(o.Total_Amount) AS Average_Order_Value
+FROM Orders o
+JOIN Payments pay ON o.Order_ID = pay.Order_ID
+GROUP BY pay.Payment_Method
+ORDER BY Average_Order_Value DESC;
+
+-- Orders with Reviews and Customer Feedback
+
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    p.Name AS Product_Name,
+    r.Rating,
+    r.Review_Text,
+    r.Review_Date
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID
+JOIN Reviews r ON c.Customer_ID = r.Customer_ID AND p.Product_ID = r.Product_ID
+ORDER BY r.Review_Date DESC;
+
+-- Big Query: Comprehensive Analysis of Orders with Discounts, Payments, Shipments, and Reviews
+
+DROP TABLE IF EXISTS ORDERS_COMBINED;
+
+CREATE TABLE ORDERS_COMBINED AS
+SELECT 
+    o.Order_ID,
+    c.Name AS Customer_Name,
+    c.Email AS Customer_Email,
+    p.Name AS Product_Name,
+    p.Price AS Product_Price,
+    IFNULL(d.Discount_Code, 'No Discount') AS Discount_Code,
+    IFNULL(d.Discount_Amount, 0) AS Discount_Amount,
+    o.Total_Amount,
+    pay.Payment_Method,
+    pay.Amount_Paid,
+    pay.Payment_Date,
+    s.Carrier,
+    s.Status AS Shipment_Status,
+    s.Tracking_Number,
+    s.Shipment_Date,
+    r.Rating,
+    r.Review_Text,
+    o.Order_Date,
+    o.Status AS Order_Status
+FROM Orders o
+JOIN Customers c ON o.Customer_ID = c.Customer_ID
+JOIN Products p ON o.Product_ID = p.Product_ID
+LEFT JOIN Discounts d ON o.Discount_ID = d.Discount_ID
+LEFT JOIN Payments pay ON o.Order_ID = pay.Order_ID
+LEFT JOIN Shipments s ON o.Order_ID = s.Order_ID
+LEFT JOIN Reviews r ON o.Customer_ID = r.Customer_ID AND o.Product_ID = r.Product_ID
+ORDER BY o.Order_Date DESC;
